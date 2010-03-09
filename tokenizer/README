@@ -1,0 +1,33 @@
+This directory contains directories for languages.  Each language
+directory contains tokenizer modules.
+
+A tokenizer module should provide
+tokenize() function.  tokenize() function tokenizes a given string
+and checks markup syntax.  However, note that it can't check
+cross-segment markups.
+
+The output of the tokenize() function is used to check markup syntax,
+and also as a input to the spell checker.
+
+The file name of the tokenizer module should be a code name of an
+annotation guidelines.  This name also appears in the configuration
+file on the "guidelines" entry.
+
+
+tokenize() function
+===================
+
+input: transcript (one segment)
+
+output: list of list
+
+each sub list should contain
+
+  0 - start index of the token
+  1 - end index of the token
+  2 - start index of the spell-checkable portion
+  3 - end index of the spell-checkable portion
+  4 - tag ("":good, "err":error, "nospell":don't spell-check)
+  5 - error description
+
+
