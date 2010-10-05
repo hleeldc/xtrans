@@ -10,12 +10,15 @@ __all__ = ["SectionSideBar", "SuSideBar", "SpeakerSideBar"]
 class MyMap:
     def __init__(self, cmap=None, keys=None, values=None, default=None):
         """
-        @param cmap: A mapping.  If this is None, keys and values are used.
-        @param keys: List of keys.  If keys and values are None,
+        @param cmap: A function returning a mapping.  If this is None,
+        keys and values are used.
+        @param keys: A function returning a list of keys.
+        If keys and values are None,
         cmap is used.  If keys is not None, values shouldn't be None.  If
         they are not None, their lengths should match.  If cmap is None,
         this shouldn't be None.
-        @param values: List of values.  If keys and values are None,
+        @param values: A function returning a list of values.
+        If keys and values are None,
         cmap is used.  If values is not None, keys shouldn't be None.  If
         they are not None, their lengths should match.  If cmap is None,
         this shouldn't be None.
@@ -26,34 +29,38 @@ class MyMap:
         @type default: any
         """
         if cmap:
-            self.cmap = cmap
+            def cmapf(k):
+                h = cmap()
+                if k in h:
+                    return h[k]
+                else:
+                    return default
         else:
-            self.cmap = {}
-            if keys and values and len(keys)==len(values):
-                for i,k in enumerate(keys):
-                    self.cmap[k] = values[i]
-        self.dc = default
+            def cmapf(k):
+                try:
+                    idx = keys().index(k)
+                except ValueError:
+                    return default
+                try:
+                    return values()[idx]
+                except ValueError:
+                    return default
+        self.cmapf = cmapf
 
     def __call__(self, k):
-        try:
-            return self.cmap[k]
-        except KeyError:
-            return self.dc
+        return self.cmapf(k)
 
     def __getitem__(self, k):
-        try:
-            return self.cmap[k]
-        except KeyError:
-            return self.dc
-        
+        return self.cmapf(k)
+
 class SectionSideBar(at4.TranscriptEditSideBarCanvas):
     def __init__(self, te, colorMap=lambda x:Qt.white, parent=None, xtrans=None):
         """
         @param te: TranscriptEdit
         @param colorMap: speaker color map
         """
-        colorMap = MyMap(keys=config['sectionTypes'],
-                         values=config['sectionColors'],
+        colorMap = MyMap(keys=lambda:config['sectionTypes'],
+                         values=lambda:config['sectionColors'],
                          default=QtCore.Qt.gray)
         at4.TranscriptEditSideBarCanvas.__init__(
             self, te, "", "", colorMap, parent)
@@ -157,11 +164,11 @@ class SuSideBar(at4.TranscriptEditSideBarCanvas):
         @param te: TranscriptEdit
         @param colorMap: speaker color map
         """
-        colorMap = MyMap(keys=config['suSymbols']+config['suTypes'],
-                         values=config['suColors']+config['suColors'],
+        colorMap = MyMap(keys=lambda:config['suSymbols']+config['suTypes'],
+                         values=lambda:config['suColors']+config['suColors'],
                          default=QtCore.Qt.gray)
-        symbolMap = MyMap(keys=config['suTypes']+config['suSymbols'],
-                          values=config['suSymbols']+config['suSymbols'],
+        symbolMap = MyMap(keys=lambda:config['suTypes']+config['suSymbols'],
+                          values=lambda:config['suSymbols']+config['suSymbols'],
                           default=None)
         at4.TranscriptEditSideBarCanvas.__init__(
             self, te, "suType", Format(symbolMap), colorMap, parent)
