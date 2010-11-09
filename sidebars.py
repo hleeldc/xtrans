@@ -5,7 +5,12 @@ from config import config
 import bisect
 import traceback
 
-__all__ = ["SectionSideBar", "SuSideBar", "SpeakerSideBar"]
+__all__ = [
+    "SectionSideBar",
+    "SuSideBar",
+    "SpeakerSideBar",
+    "SpeakerSideBarSUTrans",
+    ]
 
 class MyMap:
     def __init__(self, cmap=None, keys=None, values=None, default=None):
@@ -297,3 +302,13 @@ class SpeakerSideBar(at4.TranscriptEditSideBarCanvas):
             if item is None: return
             seg = self._box2seg[item]
             seg.select()
+
+class SpeakerSideBarSUTrans(SpeakerSideBar):
+    def __init__(self, te, field, format, cmap, parent=None, xtrans=None):
+        SpeakerSideBar.__init__(self, te, field, format, cmap, parent)
+
+    def mousePressEvent(self, e):
+        if e.button() == QtCore.Qt.RightButton:
+            e.ignore()
+        else:
+            SpeakerSideBar.mousePressEvent(self, e)
