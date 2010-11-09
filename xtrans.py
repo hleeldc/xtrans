@@ -61,6 +61,7 @@ class Xtrans(QtGui.QMainWindow):
         splitter = QtGui.QSplitter(self)
         splitter.setOrientation(QtCore.Qt.Vertical)
         upper_panel = QtGui.QWidget(splitter)  # upper panel
+        splitter.setStretchFactor(0, 1)
          
         self.tred = TranscriptEdit(upper_panel)
         f = self.tred.font()
@@ -1926,7 +1927,7 @@ if __name__ == "__main__":
     #elif options.newfile:
         w.menu_File_New()
         
-
+    w.resize(800, 600)
     w.show()
 
     if options.soundfile:
