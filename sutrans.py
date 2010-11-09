@@ -886,6 +886,7 @@ if __name__ == "__main__":
             w.save(options.ofilename, '.tdf')
             sys.exit(0)
 
+    w.resize(800, 500)
     w.show()
 
     w.statusBar().showMessage("")
