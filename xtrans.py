@@ -99,11 +99,13 @@ class Xtrans(QtGui.QMainWindow):
         btnLRS = SmallButton("LRS", self.spkrPanel)
         btnLAS = SmallButton("LAS", self.spkrPanel)
         btnLAG = SmallButton("LAG", self.spkrPanel)
+        btnLSG = SmallButton("LSG", self.spkrPanel)
         btnVOS.setToolTip("View only selected speaker's segments")
         btnVAS.setToolTip("View all speakers' segments")
         btnLRS.setToolTip("Listen random segments of selected speaker")
         btnLAS.setToolTip("Listen all segments of selected speaker")
         btnLAG.setToolTip("Listen all gaps")
+        btnLSG.setToolTip("Listen gaps of selected channel")
         btnNSI.setToolTip("Assign new speaker ID for a single segment")
         btnESIg.setToolTip("Edit speaker information of all segments of selected speaker")
         btnMRG.setToolTip("Merge current segment into another speaker")
@@ -114,7 +116,8 @@ class Xtrans(QtGui.QMainWindow):
         self.connect(btnVAS, QtCore.SIGNAL("clicked()"), self.viewAllSpeakers)
         self.connect(btnLRS, QtCore.SIGNAL("clicked()"), self.listenRandomSample)
         self.connect(btnLAS, QtCore.SIGNAL("clicked()"), self.listenAll)
-        self.connect(btnLAG, QtCore.SIGNAL("clicked()"), self.listenGaps)
+        self.connect(btnLAG, QtCore.SIGNAL("clicked()"), self.listenAllGaps)
+        self.connect(btnLSG, QtCore.SIGNAL("clicked()"), self.listenChannelGaps)
         self.connect(btnNSI, QtCore.SIGNAL("clicked()"), self.assignNewSpeakerId)
         self.connect(btnESIg, QtCore.SIGNAL("clicked()"), self.editSpeakerInfoGlobal)
         self.connect(btnMRG, QtCore.SIGNAL("clicked()"), self.mergeSpeaker)
@@ -130,6 +133,7 @@ class Xtrans(QtGui.QMainWindow):
 
         # flags for listenGaps
         self._btnLAG = btnLAG
+        self._btnLSG = btnLSG
         self._stopListenGaps = False
         self._listenGapsThread = None
         self._btnLagColor = btnLAG.palette().color(QtGui.QPalette.Button)
@@ -309,6 +313,7 @@ class Xtrans(QtGui.QMainWindow):
         btnpnl.addWidget(btnLRS,  3, 0)
         btnpnl.addWidget(btnLAS,  3, 1)
         btnpnl.addWidget(btnLAG,  3, 2)
+        btnpnl.addWidget(btnLSG,  3, 3)
         #btnpnl.setSpacing(0)
         upper.setSpacing(0)
 
@@ -384,12 +389,12 @@ class Xtrans(QtGui.QMainWindow):
             length = 60.0
         sndfile = DummySndFile(
             self.data,self.colorMap.color,self.wave.getWaveform,
-            channels=1,length=length)
+            channels=1,length=length, numLayers=4)
         filename = sndfile.getFileName()
         self.wave.addDummySndFile(sndfile)
         self.wave.placeWaveform(filename, 0, 0, True)
         w = self.wave.getWaveform(filename, 0)
-        w.setFixedHeight(17)
+        w.setFixedHeight(22)
         self.dummyAudio = sndfile
 
 
@@ -1087,19 +1092,37 @@ class Xtrans(QtGui.QMainWindow):
         self._listenAllThread = threading.Thread(target=f)
         self._listenAllThread.start()
 
-    def listenGaps(self):
+    def listenAllGaps(self):
+        self.listenGaps('LAG')
+
+    def listenChannelGaps(self):
+        wform,beg,end = self.wave.getSelectedRegionS()
+        tup = self.wave.getAssociationForWaveform(wform)
+        if tup is not None:
+            fileid, ch = tup
+            filter = lambda x: x['file']==fileid and x['channel']==ch
+            self.listenGaps('LSG', filter)
+
+    def listenGaps(self, btnName="LAG", filter=lambda x:True):
         if self.data is None or not self.audioFiles: return
         if self._listenAllThread: return
 
+        if btnName == 'LAG':
+            btn = self._btnLAG
+        elif btnName == 'LSG':
+            btn = self._btnLSG
+        else:
+            return
+        
         if self._listenGapsThread:
             self._stopListenGaps = True
             self.wave.player.stop()
             self._listenGapsThread.join()
             self._listenGapsThread = None
-            self._btnLAG.setText("LAG")
-            palette = self._btnLAG.palette()
+            btn.setText(btnName)
+            palette = btn.palette()
             palette.setColor(palette.Button, self._btnLagColor)
-            self._btnLAG.setPalette(palette)
+            btn.setPalette(palette)
             return
 
         limit = 0
@@ -1110,6 +1133,7 @@ class Xtrans(QtGui.QMainWindow):
         def f():
             maxend = 0
             for seg in self.data:
+                if not filter(seg): continue
                 if self._stopListenGaps: break
                 s = seg['start']
                 e = seg['end']
@@ -1124,14 +1148,19 @@ class Xtrans(QtGui.QMainWindow):
                 self.wave.player.wait()
             palette = self._btnLAG.palette()
             palette.setColor(palette.Button, self._btnLagColor)
-            self._btnLAG.setPalette(palette)
-            self._btnLAG.setText("LAG")
+            btn.setPalette(palette)
+            btn.setText("LAG")
+            self._btnLAG.setEnabled(True)
+            self._btnLSG.setEnabled(True)
             self._listenGapsThread = None
             
         palette = self._btnLAG.palette()
         palette.setColor(palette.Button, QtCore.Qt.red)
-        self._btnLAG.setPalette(palette)
-        self._btnLAG.setText("STOP")
+        self._btnLAG.setEnabled(False)
+        self._btnLSG.setEnabled(False)
+        btn.setEnabled(True)
+        btn.setPalette(palette)
+        btn.setText("STOP")
         self._stopListenGaps = False
         self._listenGapsThread = threading.Thread(target=f)
         self._listenGapsThread.start()
