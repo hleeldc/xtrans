@@ -684,7 +684,9 @@ class Xtrans(QtGui.QMainWindow):
         if self.data is None: return
         segIdx = self.data.getSelection()
         if segIdx >= len(self.data): return
-        para, charIdx = self.tred.getCursorPosition()
+        cur = self.tred.textCursor()
+        charIdx = cur.position()
+        para = cur.blockNumber()
 
         seg1 = self.data[segIdx]
         segIdx2 = None
@@ -692,7 +694,7 @@ class Xtrans(QtGui.QMainWindow):
         fileid = seg1['file']
         channel = seg1['channel']
         speaker = seg1['speaker']
-        for para in range(para+1,self.tred.paragraphs()):
+        for para in range(para+1,self.tred.document().blockCount()):
             segIdx2 = self.tred.getSegmentIndex(para)
             seg2 = self.data[segIdx2]
             if fileid == seg2['file'] and \
@@ -714,8 +716,8 @@ class Xtrans(QtGui.QMainWindow):
         seg1['suType'] = seg2['suType']
         top2 = self.data.undoStackStatus()[0]
         self.undoStatus.append((top2,top2-top1))
-
-        self.tred.setCursorPosition(segIdx,charIdx)
+        cur.setPosition(charIdx)
+        self.tred.setTextCursor(cur)
 
     def setSU(self, suType, seg=None):
         if self.data is None: return
