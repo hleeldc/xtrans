@@ -642,28 +642,35 @@ class Xtrans(QtGui.QMainWindow):
     # shorcut bindings: join/split
     def splitSegment(self):
         if self.data is None: return
+        
         cur = self.tred.textCursor()
         charIdx = cur.position() - cur.block().position()
         segIdx = self.data.getSelection()
         seg = self.data[segIdx]
         lst = seg.toList()
 
-        i = seg.getColumnIndex('start')
-        t0 = seg[i]
+        i_start = seg.getColumnIndex('start')
+        t0 = seg[i_start]
         t1 = seg['end']
-        #tt = self.wave.getCursorPositionS()
-        tt = (t0 + t1) / 2.0
-        if tt <= t0 or tt >= t1: return
+
+        i_trans = seg.getColumnIndex('transcript')
+        trans = seg[i_trans]
+
+        if charIdx == 0 or charIdx == len(trans) or len(trans) == 0:
+            return
+
+        tt = t0 + (t1 - t0) / len(trans) * charIdx
+
+        if tt <= t0 or tt >= t1:
+            return
 
         top1 = self.data.undoStackStatus()[0]
         
         seg['end'] = tt
-        lst[i] = tt
+        lst[i_start] = tt
 
-        i = seg.getColumnIndex('transcript')
-        trans = seg[i]
-        seg[i] = trans[:charIdx]
-        lst[i] = trans[charIdx:]
+        seg[i_trans] = trans[:charIdx]
+        lst[i_trans] = trans[charIdx:]
 
         seg['suType'] = None
 
