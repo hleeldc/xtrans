@@ -99,7 +99,7 @@ class SpeakerInfoDialog(QtGui.QDialog):
     def _ok(self):
         spkr = self.ledSpkrId.text()
         if len(spkr) == 0:
-            QMessageBox.critical(
+            QtGui.QMessageBox.critical(
                 self, "Speaker ID Error",
                 "Speaker ID shouldn't be an empty string.",
                 "OK")
@@ -107,7 +107,7 @@ class SpeakerInfoDialog(QtGui.QDialog):
         elif spkr != self.orgSpkr:
             for row in self.data:
                 if row['speaker'] == spkr:
-                    QMessageBox.critical(
+                    QtGui.QMessageBox.critical(
                         self, "Speaker ID Error",
                         "Speaker ID is not unique.",
                         "OK")

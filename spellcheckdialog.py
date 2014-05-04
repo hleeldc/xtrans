@@ -232,7 +232,7 @@ class SpellChecker(QtGui.QDialog):
             self.dic = MyASpell(('lang',lang))
         except aspell.AspellSpellerError, e:
             self.cbox.setCurrentItem(self.activeLangIdx)
-            QMessageBox.critical(
+            QtGui.QMessageBox.critical(
                 self,
                 "Dictionary Not Found",
                 str(e),
@@ -243,7 +243,7 @@ class SpellChecker(QtGui.QDialog):
             self.importTokenizer(lang)
         except ImportError:
             self.cbox.setCurrentItem(self.activeLangIdx)
-            QMessageBox.critical(
+            QtGui.QMessageBox.critical(
                 self,
                 "Not Supported Language",
                 "Annotation guildelines, code-named '%s', doesn not support\n"
