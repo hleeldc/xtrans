@@ -1,0 +1,90 @@
+#! /usr/bin/env python
+
+import os
+from PyQt4 import QtGui
+from xtrans.xtrans import Xtrans
+from optparse import OptionParser
+
+if __name__ == "__main__":
+    xtransdir = config['xtransdir']
+    if os.path.exists(xtransdir):
+        if not os.path.isdir(xtransdir):
+            print
+            print "Please remove the following file and try again."
+            print os.path.normpath(xtransdir)
+            print
+            sys.exit(1)
+    else:
+        os.mkdir(xtransdir)
+    
+    app = QtGui.QApplication(sys.argv)
+
+    parser = OptionParser()
+    parser.add_option("-i", "--file", dest="filename",
+                      help="open FILE at start", metavar="FILE")
+    parser.add_option("-f", "--format", dest="format", default='.tdf',
+                      help="input file in of FORMAT format", metavar="FORMAT")
+    parser.add_option("-s", "--sound", dest="soundfile",
+                      help="open an audio file FILE at start. If there are "
+                      "more than one files to open, use comma to list the "
+                      "files. There shouldn't be any space around comma.",
+                      metavar="FILE")
+    parser.add_option("-r", "--right-to-left", dest="bidi",
+                      action="store_true", default=False,
+                      help="text goes from right to left")
+    parser.add_option("-a", "--blind-assoc", dest="assoc",
+                      action="store_true", default=False,
+                      help="blindly associate the transcript to audio channels")
+    parser.add_option("-o", "--output", dest="ofilename",
+                      help="save file as FILE and exit", metavar="FILE")
+    parser.add_option("-n", "--new", dest="newfile",
+                      action="store_true", default=False,
+                      help="open a new file at start")
+    parser.add_option("-c", "--config", dest="config",
+                      help="start with config file FILE", metavar="FILE")
+    
+    (options, args) = parser.parse_args(app.argv()[1:])
+    
+    if options.bidi or \
+       (len(args)>0 and args[0] == "arabic"):
+        bidi = True
+    else:
+        bidi = False
+
+    w = Xtrans(reverse=bidi)
+    w.setWindowTitle("Xtrans: no file")
+
+    if options.config:
+        w.menu_Tools_LoadConfigFile(options.config)
+        
+    if options.filename:
+        if options.format == '.tdf':
+            w.menu_File_Open(options.filename)
+        elif options.format == '.trs':
+            w.menu_File_Import_Transcriber(options.filename)
+        elif options.format == '.wl.sgm':
+            w.menu_File_Import_WeblogSgm(options.filename)
+        elif options.format == '.ng.sgm':
+            w.menu_File_Import_NewsgroupSgm(options.filename)
+
+        if options.ofilename:
+            w.save(options.ofilename, '.tdf')
+            sys.exit(0)
+    else:
+    #elif options.newfile:
+        w.menu_File_New()
+        
+    w.resize(800, 600)
+    w.show()
+
+    if options.soundfile:
+        for f in options.soundfile.split(','):
+            w.menu_File_OpenAudio(f)
+
+    if options.assoc:
+        w.menu_Edit_BlindAssoc()
+
+    w.statusBar().showMessage("")
+    
+    app.exec_()
+
